@@ -23,7 +23,7 @@ if [ -d "offline/pip" ]; then
         echo "  安装 $(basename $whl)..."
         sudo pip3 install "$whl" --no-deps -q 2>/dev/null
     done
-    sudo pip3 install requests colorama -q 2>/dev/null
+    sudo pip3 install requests colorama streamlit -q 2>/dev/null
     echo "[完成] Python包"
 else
     echo "[跳过] 未找到offline/pip目录"

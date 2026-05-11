@@ -122,11 +122,16 @@ echo.
 :: =============================================
 ::  Step 6: 安装 nmap (如存在)
 :: =============================================
-if exist "offline\nmap\nmap.exe" (
+if exist "offline\nmap\*.exe" (
     echo  安装 nmap 到系统目录...
-    copy /Y "offline\nmap\*.exe" C:\Windows\System32\ >nul 2>&1
-    copy /Y "offline\nmap\*.dll" C:\Windows\System32\ >nul 2>&1
+    for %%f in (offline\nmap\*.exe) do (
+        echo   安装 %%~nxf...
+        start /wait cmd /c "%%f /S /D=C:\nmap" >nul 2>&1
+    )
     echo  [OK] nmap 安装完成
+) else if exist "offline\nmap\*.zip" (
+    echo  [i] 检测到 nmap.zip，请手动解压并添加到 PATH
+    echo    下载: https://nmap.org/dist/nmap-7.95-win32.zip
 ) else (
     echo  [i] 未找到 offline\nmap\，跳过 nmap
     echo    下载: https://nmap.org/dist/nmap-7.95-win32.zip

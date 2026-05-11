@@ -675,9 +675,9 @@ def tab_ai():
     """, unsafe_allow_html=True)
     c1, c2 = st.columns(2)
     with c1:
-        provider = st.selectbox("模型提供商", ["ollama", "openai", "claude", "vllm"])
+        provider = st.selectbox("模型提供商", ["ollama-local", "openai", "anthropic", "vllm"])
     with c2:
-        model = st.text_input("模型名称", value="qwen2.5-coder:7b" if provider == "ollama" else "gpt-4o")
+        model = st.text_input("模型名称", value="qwen2.5-coder:7b" if provider == "ollama-local" else "gpt-4o")
     task_type = st.selectbox("题目类型", ["Web", "Reverse", "Crypto", "Pwn", "Misc", "Forensics", "Cloud"])
     task_desc = st.text_area("题目描述 / 描述", value="", placeholder="粘贴题目描述、源码、链接...", height=200)
     if "file" in task_type.lower() or "reverse" in task_type.lower():
@@ -699,7 +699,7 @@ def tab_ai():
 3. 关键flag位置或解题突破口
 """
             # 调用Ollama
-            if provider == "ollama":
+            if provider == "ollama-local":
                 code, stdout, stderr = run_tool(
                     f'curl -s http://localhost:11434/api/generate -d \'{{"model":"{model}","prompt":"{prompt[:2000]}","stream":false}}\'',
                     timeout=60
