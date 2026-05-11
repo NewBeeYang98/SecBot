@@ -56,7 +56,7 @@ class SecBotAgent:
             "mode": self.mode,
             "environment": env,
             "provider": self.llm.provider_name,
-            "model": self.llm.model(),
+            "model": self.llm.model,
             "model_status": self.llm.check_status(),
             "queue": self.queue.summary(),
             "network": self.network.summary(),
