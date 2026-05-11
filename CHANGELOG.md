@@ -4,7 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.2.0] - 2025-05-11
+## [1.2.1] - 2026-05-11
+
+### Fixed
+- **AI tab**: `extra` 变量在非 Reverse/File 类型题目下未定义，导致 NameError
+- **main.py**: pentest 模块导入失败导致菜单项 7 崩溃，增加异常捕获
+
+### Added
+- **AI tab**: 改为通过 UnifiedClient 统一调用，支持 Ollama/OpenAI/Anthropic/vLLM 真实 API
+- **Windows nmap 检测**: 自动检测 Program Files 目录下的 nmap 路径
+- **综合扫描降级**: 无 nmap 时自动切换为 Socket 扫描常用 13 个端口
+- **综合扫描进度**: 改为 markdown 格式（更清晰），Swagger 探测从 5 个路径扩展到 8 个
+- **环境检测增强**: env bar 显示 sqlmap/python 版本号
+
+---
+
+## [1.2.0] - 2026-05-11
 
 ### Added
 - **Swagger分析**: 支持直接上传本地 JSON/YAML 文件进行解析
@@ -22,28 +37,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **启动器**: 优先检测 offline/pip/ 目录，有离线包时优先离线安装
 - **pip 安装**: 自动尝试 `--break-system-packages` fallback（Ubuntu 24.04）
 - **UI主题**: 全套 GitHub Dark 风格配色，渐变按钮，动画效果
-
----
-
-## [1.1.0] - 2025-05-11
-
-### Fixed
-- **web_app.py**: 修复 Streamlit 新版重复元素 ID 报错（button/text_input 加唯一 key）
-- **启动器脚本**: 修复 Ubuntu 24.04 externally-managed-environment 报错
-- **install.py**: 修复离线包安装失败问题
-- **依赖安装逻辑**: 优先使用离线包，离线包不存在时自动在线安装
-
-### Changed
-- **启动器**: 优先检测 offline/pip/ 目录，有离线包时优先离线安装
-- **pip 安装**: 自动尝试 `--break-system-packages` fallback（Ubuntu 24.04）
 - **模块名映射**: beautifulsoup4→bs4, pycryptodome→Crypto
 
-### Added
-- **离线包**: 预置 streamlit/requests/beautifulsoup4/lxml/colorama/pycryptodome/pygments
-
 ---
 
-## [1.0.0] - 2025-05-09
+## [1.0.0] - 2026-05-09
 
 ### Added
 - **main.py** — 交互式菜单，支持 7 大功能模块
