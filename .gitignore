@@ -1,0 +1,80 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Project specific
+tasks/
+results/
+reports/
+tasks.json
+results.json
+
+# Credentials — NEVER commit these
+config.py           # 包含API Key，运行时不提交
+*.pem
+*.key
+.env
+auth.json
+state.db
+gateway_state.json
+gateway.pid
+
+# Offline packages — large, exclude from git but distribute separately
+# For internet users: run download_offline.py to fetch packages
+# For offline users: copy offline/pip/ via USB/network from a machine with internet
+offline/pip/*.whl
+offline/pip/*.tar.gz
+offline/tools/
+offline/nmap/
+offline/ollama/
+offline/ollama_models.txt
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp

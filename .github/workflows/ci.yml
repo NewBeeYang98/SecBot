@@ -1,0 +1,54 @@
+name: SecBot CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Syntax check
+        run: |
+          python -m py_compile main.py
+          python -m py_compile core/agent.py
+          python -m py_compile core/check_dependencies.py
+          python -m py_compile core/executor.py
+          python -m py_compile core/network_detector.py
+          python -m py_compile core/task_queue.py
+          python -m py_compile modules/ollama_client.py
+          python -m py_compile modules/ctf_solver.py
+          python -m py_compile modules/scanner.py
+          python -m py_compile modules/stego.py
+          python -m py_compile modules/sqli.py
+          python -m py_compile modules/brute.py
+          python -m py_compile modules/report.py
+
+      - name: Dependency check
+        run: |
+          python -c "from core.check_dependencies import DependencyChecker; c = DependencyChecker(); c.run_all_checks()"
+
+      - name: Install test dependencies
+        run: pip install requests colorama
+
+      - name: Core import test
+        run: |
+          python -c "
+          from core.agent import SecBotAgent
+          from core.network_detector import NetworkDetector
+          from modules.ollama_client import UnifiedClient
+          print('All core modules import OK')
+          "
