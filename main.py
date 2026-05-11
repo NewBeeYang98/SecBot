@@ -15,7 +15,7 @@ from core.agent import SecBotAgent
 from core.network_detector import NetworkDetector
 from core.task_queue import TaskQueue, Task
 from modules.ollama_client import UnifiedClient
-from config import MODEL_PROVIDER, DEFAULT_MODEL
+from config import PROVIDERS, CURRENT_PROVIDER
 
 
 def print_banner():
@@ -212,8 +212,8 @@ def do_ctf(agent):
 flag{{...}}
 """
 
-    from config import MODEL_PROVIDER
-    llm = UnifiedClient(provider=MODEL_PROVIDER)
+    from config import PROVIDERS, CURRENT_PROVIDER
+    llm = UnifiedClient(provider=CURRENT_PROVIDER)
     result = llm.generate(prompt)
 
     print("\n" + "=" * 50)
