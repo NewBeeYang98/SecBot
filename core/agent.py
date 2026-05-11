@@ -15,8 +15,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.task_queue import TaskQueue, Task, TaskStatus
 from core.executor import TaskExecutor
 from core.network_detector import NetworkDetector
-from modules.ollama_client import UnifiedClient
-from config import MODEL_PROVIDER
+from modules.ollama_client import ModelClient as UnifiedClient
+from config import CURRENT_PROVIDER
 
 
 class SecBotAgent:
@@ -31,9 +31,9 @@ class SecBotAgent:
     """
 
     def __init__(self, provider=None, model=None):
-        self.provider = provider or MODEL_PROVIDER
+        self.provider = provider or CURRENT_PROVIDER
         self.model = model
-        self.llm = UnifiedClient(provider=self.provider, model=self.model)
+        self.llm = UnifiedClient(provider_name=self.provider)
         self.queue = TaskQueue()
         self.executor = TaskExecutor()
         self.network = NetworkDetector()
@@ -55,7 +55,7 @@ class SecBotAgent:
         return {
             "mode": self.mode,
             "environment": env,
-            "provider": self.llm.provider,
+            "provider": self.llm.provider_name,
             "model": self.llm.model,
             "model_status": self.llm.check_status(),
             "queue": self.queue.summary(),
