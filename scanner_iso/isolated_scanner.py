@@ -219,7 +219,7 @@ class HostDiscovery:
     """内网主机发现，不依赖nmap"""
 
     @staticmethod
-    def ping sweep(hosts, timeout=1):
+    def ping_sweep(hosts, timeout=1):
         """Ping发现（发送ICMP+TCP）"""
         alive = []
         scanner = SimpleScanner(timeout=timeout)
