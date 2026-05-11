@@ -289,8 +289,12 @@ def main():
                 print(f"[+] 已导出: {path}")
                 input("\n按回车继续...")
             elif choice == "7":
-                from pentest import run_pentest_menu
-                run_pentest_menu()
+                try:
+                    from pentest import run_pentest_menu
+                    run_pentest_menu()
+                except Exception as e:
+                    print(f"\n[!] 渗透测试工具集加载失败: {e}")
+                    input("\n按回车继续...")
             elif choice.lower() == "d":
                 do_check_dependencies()
             elif choice.lower() == "w":

@@ -181,6 +181,25 @@ def check_tool(name, check_cmd):
     except Exception:
         return False, "未找到"
 
+
+def find_nmap_path():
+    """检测 nmap 安装路径（支持 Windows）"""
+    import os
+    # Windows 常见路径
+    if os.name == "nt":
+        for base in [os.environ.get("ProgramFiles", "C:\\Program Files"),
+                     os.environ.get("ProgramFiles(x86)", "C:\\Program Files (x86)"),
+                     "C:\\"]:
+            nmap_bin = os.path.join(base, "nmap", "nmap.exe")
+            if os.path.exists(nmap_bin):
+                return nmap_bin
+        # PATH 中查找
+        for p in os.environ.get("PATH", "").split(os.pathsep):
+            nmap_bin = os.path.join(p, "nmap.exe")
+            if os.path.exists(nmap_bin):
+                return nmap_bin
+    return None
+
 def check_port_open(host, port, timeout=2):
     """检测端口是否开放"""
     try:
@@ -223,9 +242,20 @@ def run_tool(cmd, timeout=60, capture=True):
 @st.cache_data(ttl=30)
 def detect_env():
     env = {}
-    env["has_nmap"], env["nmap_ver"] = check_tool("nmap", "nmap --version 2>&1 | head -1")
-    env["has_sqlmap"], _ = check_tool("sqlmap", "sqlmap --version 2>&1 | head -1")
-    env["has_python"], _ = check_tool("python3", "python3 --version 2>&1")
+    # nmap 检测（兼容 Windows 路径）
+    nmap_path = find_nmap_path()
+    if nmap_path:
+        try:
+            result = subprocess.run([nmap_path, "--version"], capture_output=True, text=True, timeout=10)
+            env["has_nmap"] = result.returncode == 0
+            env["nmap_ver"] = result.stdout.strip().split("\n")[0][:100] if result.stdout else "可用"
+        except Exception:
+            env["has_nmap"] = False
+            env["nmap_ver"] = "未找到"
+    else:
+        env["has_nmap"], env["nmap_ver"] = check_tool("nmap", "nmap --version 2>&1 | head -1")
+    env["has_sqlmap"], env["sqlmap_ver"] = check_tool("sqlmap", "sqlmap --version 2>&1 | head -1")
+    env["has_python"], env["python_ver"] = check_tool("python3", "python3 --version 2>&1")
     env["local_ip"] = get_local_ip()
     try:
         import urllib.request
@@ -381,6 +411,7 @@ def tab_port_scan():
 
 # ── Tab 2: 目录扫描 ───────────────────────────────────
 def tab_dir_scan():
+    env = detect_env()
     col1, col2 = st.columns([3, 1])
     with col1:
         target = st.text_input("🎯 目标URL", value="", placeholder="http://example.com 或 http://192.168.1.1", key="ti_dir_target")
@@ -680,13 +711,14 @@ def tab_ai():
         model = st.text_input("模型名称", value="qwen2.5-coder:7b" if provider == "ollama-local" else "gpt-4o")
     task_type = st.selectbox("题目类型", ["Web", "Reverse", "Crypto", "Pwn", "Misc", "Forensics", "Cloud"])
     task_desc = st.text_area("题目描述 / 描述", value="", placeholder="粘贴题目描述、源码、链接...", height=200)
+    extra = ""
     if "file" in task_type.lower() or "reverse" in task_type.lower():
         extra = st.text_area("附加信息", value="", placeholder="附件路径、IDA截图描述...", height=100)
     if st.button("🧠 开始分析", type="primary", use_container_width=True, key="btn_ai_analyze"):
         if not task_desc:
             st.warning("请输入题目描述")
             return
-        with st.spinner("AI 正在分析 ..."):
+        with st.spinner("🤖 AI 正在分析 ..."):
             prompt = f"""你是CTF解题专家。用户遇到了一道{task_type}题目。
 
 题目描述：
@@ -698,19 +730,13 @@ def tab_ai():
 2. 可能用到的工具
 3. 关键flag位置或解题突破口
 """
-            # 调用Ollama
-            if provider == "ollama-local":
-                code, stdout, stderr = run_tool(
-                    f'curl -s http://localhost:11434/api/generate -d \'{{"model":"{model}","prompt":"{prompt[:2000]}","stream":false}}\'',
-                    timeout=60
-                )
-                try:
-                    resp = json.loads(stdout)
-                    answer = resp.get("response", "（无输出）")
-                except Exception:
-                    answer = stdout if stdout else "调用失败"
-            else:
-                answer = f"[{provider}] AI模型调用示例：请在config.py中配置有效的API Key"
+            # 使用 UnifiedClient 统一调用
+            try:
+                from modules.ollama_client import UnifiedClient
+                client = UnifiedClient(provider_name=provider)
+                answer = client.generate(prompt, model_override=model if model else None)
+            except Exception as e:
+                answer = f"❌ 调用失败: {str(e)}"
         st.markdown("### 💡 AI 分析结果")
         st.markdown(answer)
 
@@ -732,13 +758,19 @@ def tab_comprehensive():
         progress_bar = st.progress(0)
         logs = st.empty()
         results = {}
-        # 1. 端口扫描
-        logs.text("🔍 [1/4] 端口扫描...")
-        progress_bar.progress(0.1)
+
+        # ── 1. 端口扫描 ──
+        logs.markdown("🔍 **[1/4] 端口扫描** - 正在探测开放端口 ...")
+        progress_bar.progress(0.05)
         host = target.split("//")[1].split("/")[0] if "//" in target else target
         results["ports"] = []
         if env["has_nmap"]:
-            code, stdout, _ = run_tool(f"nmap -Pn -F -oN /tmp/comp_nmap.txt {host}", timeout=120)
+            # Windows nmap 路径支持
+            nmap_cmd = "nmap"
+            np = find_nmap_path()
+            if np:
+                nmap_cmd = np
+            code, stdout, _ = run_tool(f'"{nmap_cmd}" -Pn -F -oN /tmp/comp_nmap.txt {host}', timeout=120)
             try:
                 with open("/tmp/comp_nmap.txt", "r") as f:
                     results["nmap_raw"] = f.read()
@@ -746,13 +778,23 @@ def tab_comprehensive():
                 results["nmap_raw"] = stdout
             import re
             results["ports"] = re.findall(r'^(\d+)/', results.get("nmap_raw",""), re.MULTILINE)
-        st.success("✅ [1/4] 端口扫描完成")
+        else:
+            # 无nmap时用Socket扫描常用端口
+            common = [21,22,23,80,443,445,3306,3389,5432,6379,8080,8443,27017]
+            open_p = []
+            for p in common:
+                if check_port_open(host, p):
+                    open_p.append(str(p))
+            results["ports"] = open_p
+            results["nmap_raw"] = f"[Socket扫描] 发现端口: {','.join(open_p) if open_p else '无'}"
+        logs.markdown("✅ **[1/4] 端口扫描完成**")
         progress_bar.progress(0.25)
-        # 2. 目录扫描
-        logs.text("📂 [2/4] 目录扫描...")
+        # ── 2. 目录扫描 ──
+        logs.markdown("📂 **[2/4] 目录扫描** - 探测常见路径 ...")
         target_http = target if target.startswith("http") else f"http://{target}"
         found_dirs = []
-        for w in ["admin","api","login","backup","swagger","phpmyadmin",".git","robots.txt"]:
+        dir_words = ["admin","api","login","backup","swagger","phpmyadmin",".git","robots.txt"]
+        for w in dir_words:
             code, out, _ = run_tool(f"curl -s -o /dev/null -w '%{{http_code}}' --max-time 3 {target_http}/{w}", timeout=10)
             try:
                 if int(out) < 400:
@@ -760,12 +802,12 @@ def tab_comprehensive():
             except Exception:
                 pass
         results["dirs"] = found_dirs
-        st.success("✅ [2/4] 目录扫描完成")
+        logs.markdown("✅ **[2/4] 目录扫描完成**")
         progress_bar.progress(0.5)
-        # 3. Swagger
-        logs.text("📋 [3/4] Swagger探测...")
+        # ── 3. Swagger探测 ──
+        logs.markdown("📋 **[3/4] Swagger探测** - 搜索API文档 ...")
         found_swagger = []
-        for p in SWAGGER_PATHS[:5]:
+        for p in SWAGGER_PATHS[:8]:
             code, out, _ = run_tool(f"curl -s -o /dev/null -w '%{{http_code}}' --max-time 3 {target_http}{p}", timeout=10)
             try:
                 if int(out) == 200:
@@ -773,10 +815,10 @@ def tab_comprehensive():
             except Exception:
                 pass
         results["swagger"] = found_swagger
-        st.success("✅ [3/4] Swagger探测完成")
+        logs.markdown("✅ **[3/4] Swagger探测完成**")
         progress_bar.progress(0.75)
-        # 4. 报告
-        logs.text("📝 生成报告...")
+        # ── 4. 生成报告 ──
+        logs.markdown("📝 **[4/4] 生成报告** ...")
         report = f"""# 🔍 SecBot 综合扫描报告
 
 **目标**: {target}
@@ -813,7 +855,7 @@ def tab_comprehensive():
         else:
             report += "_未发现Swagger文档_\n"
         progress_bar.progress(1.0)
-        logs.text("✅ 扫描完成")
+        logs.markdown("✅ **扫描完成！**")
         st.text_area("📋 综合报告", value=report, height=400)
         st.download_button("💾 下载报告", report.encode(), file_name="secbot_report.md", mime="text/markdown")
 
